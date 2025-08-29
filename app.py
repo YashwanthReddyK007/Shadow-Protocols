@@ -9,6 +9,7 @@ from typing import Optional, Dict
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoProcessor, BarkModel
 import tempfile
 from io import BytesIO
+import base64
 
 # Set page config
 st.set_page_config(
@@ -17,6 +18,229 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Custom CSS for semi-transparent UI with custom wallpaper
+def get_custom_css():
+    return """
+    <style>
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+    
+    /* Main app background with custom wallpaper */
+    .stApp {
+        background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), 
+                    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080"><defs><radialGradient id="grad1" cx="30%" cy="40%"><stop offset="0%" style="stop-color:%23ff6b6b;stop-opacity:0.3"/><stop offset="50%" style="stop-color:%234ecdc4;stop-opacity:0.2"/><stop offset="100%" style="stop-color:%23000;stop-opacity:1"/></radialGradient></defs><rect width="1920" height="1080" fill="url(%23grad1)"/><g fill="none" stroke="%23333" stroke-width="1" opacity="0.3"><line x1="0" y1="200" x2="1920" y2="200"/><line x1="0" y1="400" x2="1920" y2="400"/><line x1="0" y1="600" x2="1920" y2="600"/><line x1="0" y1="800" x2="1920" y2="800"/><line x1="200" y1="0" x2="200" y2="1080"/><line x1="400" y1="0" x2="400" y2="1080"/><line x1="600" y1="0" x2="600" y2="1080"/><line x1="800" y1="0" x2="800" y2="1080"/><line x1="1000" y1="0" x2="1000" y2="1080"/><line x1="1200" y1="0" x2="1200" y2="1080"/><line x1="1400" y1="0" x2="1400" y2="1080"/><line x1="1600" y1="0" x2="1600" y2="1080"/></g></svg>') fixed;
+        background-size: cover;
+        background-position: -200px center;
+        background-repeat: no-repeat;
+    }
+    
+    /* Semi-transparent containers */
+    .main .block-container {
+        background: rgba(15, 15, 30, 0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        padding: 2rem;
+        margin-top: 1rem;
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background: rgba(20, 20, 40, 0.9) !important;
+        backdrop-filter: blur(15px);
+        border-right: 2px solid rgba(76, 175, 80, 0.4);
+    }
+    
+    /* Title styling */
+    h1 {
+        color: #4CAF50 !important;
+        font-family: 'Orbitron', monospace !important;
+        font-weight: 900 !important;
+        text-align: center !important;
+        text-shadow: 0 0 20px rgba(76, 175, 80, 0.5) !important;
+        margin-bottom: 2rem !important;
+    }
+    
+    /* Headers styling */
+    h2, h3 {
+        color: #81C784 !important;
+        font-family: 'Rajdhani', sans-serif !important;
+        font-weight: 700 !important;
+        text-shadow: 0 0 10px rgba(129, 199, 132, 0.3) !important;
+    }
+    
+    /* Text styling */
+    p, .stMarkdown, .stText {
+        color: #E8F5E8 !important;
+        font-family: 'Rajdhani', sans-serif !important;
+        font-weight: 400 !important;
+    }
+    
+    /* Input fields */
+    .stTextArea textarea, .stSelectbox select, .stTextInput input {
+        background: rgba(30, 30, 60, 0.8) !important;
+        color: #E8F5E8 !important;
+        border: 1px solid rgba(76, 175, 80, 0.5) !important;
+        border-radius: 8px !important;
+        backdrop-filter: blur(5px) !important;
+    }
+    
+    /* Buttons */
+    .stButton > button {
+        background: linear-gradient(45deg, #4CAF50, #45a049) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        font-family: 'Rajdhani', sans-serif !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 15px 0 rgba(76, 175, 80, 0.4) !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stButton > button:hover {
+        background: linear-gradient(45deg, #45a049, #4CAF50) !important;
+        box-shadow: 0 6px 20px 0 rgba(76, 175, 80, 0.6) !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    /* Primary button */
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(45deg, #FF5722, #FF7043) !important;
+        box-shadow: 0 4px 15px 0 rgba(255, 87, 34, 0.4) !important;
+    }
+    
+    .stButton > button[kind="primary"]:hover {
+        background: linear-gradient(45deg, #FF7043, #FF5722) !important;
+        box-shadow: 0 6px 20px 0 rgba(255, 87, 34, 0.6) !important;
+    }
+    
+    /* Progress bars */
+    .stProgress > div > div > div > div {
+        background: linear-gradient(90deg, #4CAF50, #81C784) !important;
+    }
+    
+    /* Success/Error messages */
+    .stSuccess, .stInfo, .stWarning, .stError {
+        background: rgba(30, 30, 60, 0.8) !important;
+        backdrop-filter: blur(10px) !important;
+        border-radius: 10px !important;
+        border-left: 4px solid #4CAF50 !important;
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background: rgba(30, 30, 60, 0.8) !important;
+        border-radius: 10px !important;
+        color: #E8F5E8 !important;
+        font-family: 'Rajdhani', sans-serif !important;
+    }
+    
+    .streamlit-expanderContent {
+        background: rgba(20, 20, 40, 0.9) !important;
+        backdrop-filter: blur(10px) !important;
+        border-radius: 0 0 10px 10px !important;
+    }
+    
+    /* Checkbox */
+    .stCheckbox label {
+        color: #E8F5E8 !important;
+        font-family: 'Rajdhani', sans-serif !important;
+    }
+    
+    /* Team info footer */
+    .team-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.95), rgba(67, 160, 71, 0.95));
+        backdrop-filter: blur(20px);
+        border-top: 2px solid rgba(129, 199, 132, 0.5);
+        padding: 15px 0;
+        text-align: center;
+        z-index: 1000;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .team-name {
+        font-family: 'Orbitron', monospace;
+        font-size: 24px;
+        font-weight: 900;
+        color: #FFFFFF;
+        text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        margin-bottom: 8px;
+    }
+    
+    .team-members {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: #F1F8E9;
+        text-shadow: 0 0 10px rgba(241, 248, 233, 0.3);
+    }
+    
+    .team-lead {
+        color: #FFD54F;
+        font-weight: 700;
+    }
+    
+    /* Adjust main content to account for footer */
+    .main .block-container {
+        padding-bottom: 120px !important;
+    }
+    
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(30, 30, 60, 0.5);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(45deg, #4CAF50, #81C784);
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(45deg, #81C784, #4CAF50);
+    }
+    
+    /* Audio player styling */
+    .stAudio {
+        background: rgba(30, 30, 60, 0.8) !important;
+        border-radius: 10px !important;
+        padding: 10px !important;
+        border: 1px solid rgba(76, 175, 80, 0.3) !important;
+    }
+    
+    /* Download button special styling */
+    .stDownloadButton > button {
+        background: linear-gradient(45deg, #2196F3, #21CBF3) !important;
+        box-shadow: 0 4px 15px 0 rgba(33, 150, 243, 0.4) !important;
+    }
+    
+    .stDownloadButton > button:hover {
+        background: linear-gradient(45deg, #21CBF3, #2196F3) !important;
+        box-shadow: 0 6px 20px 0 rgba(33, 150, 243, 0.6) !important;
+    }
+    </style>
+    """
+
+# Add team footer
+def add_team_footer():
+    st.markdown("""
+    <div class="team-footer">
+        <div class="team-name">SHADOW PROTOCOL</div>
+        <div class="team-members">
+            Team Lead: <span class="team-lead">Yashwanth Reddy</span> | 
+            Co-Developers: <strong>Venu Nakirthi</strong> & <strong>Akhilesh Yadav</strong>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ---------------- Text Enhancer ----------------
 class TextEnhancer:
@@ -262,6 +486,9 @@ def load_models():
         progress_bar.empty()
 
 def main():
+    # Apply custom CSS
+    st.markdown(get_custom_css(), unsafe_allow_html=True)
+    
     st.title("🎬 Bark TTS Audiobook Generator")
     st.markdown("Transform your text into engaging audiobooks with emotion and tone!")
     
@@ -517,6 +744,9 @@ def main():
         - Different voices work better with different content types
         - AI rewriting provides more natural flow for audiobooks
         """)
+    
+    # Add team footer
+    add_team_footer()
 
 if __name__ == "__main__":
     main()
