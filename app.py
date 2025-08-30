@@ -200,9 +200,33 @@ def get_custom_css():
         font-weight: 500 !important;
     }
     
-    /* Column spacing */
-    .css-1r6slb0 {
+    /* Column spacing and alignment */
+    .css-1r6slb0, .element-container {
         padding: 0 1rem !important;
+    }
+    
+    /* Main columns equal height */
+    .css-12oz5g7 {
+        display: flex !important;
+        align-items: stretch !important;
+    }
+    
+    .css-12oz5g7 > div {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    /* Audio generation box alignment */
+    .audio-generation-container {
+        background: rgba(25, 25, 50, 0.9) !important;
+        border-radius: 15px !important;
+        padding: 1.5rem !important;
+        border: 2px solid rgba(76, 175, 80, 0.4) !important;
+        margin-top: 0 !important;
+        min-height: 400px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
     }
     
     /* Info boxes */
@@ -211,6 +235,11 @@ def get_custom_css():
         border-radius: 12px !important;
         font-size: 1rem !important;
         margin: 1rem 0 !important;
+    }
+    
+    /* Equal column heights */
+    .block-container > div > div > div > div {
+        height: 100% !important;
     }
     
     /* Team info footer */
@@ -382,58 +411,77 @@ class TextEnhancer:
         if not self.granite_model or not self.granite_tokenizer:
             return text
 
-        advanced_prompts = {
-            "Neutral": "Rewrite this text for a professional audiobook with clear narration:\n",
-            "Suspenseful": "Transform this text into a suspenseful narrative with mysterious undertones:\n",
-            "Inspiring": "Rewrite this text as inspiring and motivational with uplifting language:\n",
-            "Conversational": "Rewrite this text as a natural podcast-style conversation:\n",
-            "Educational": "Rewrite this text for educational narration with clear explanations:\n"
+        # Simplified prompts to reduce processing load
+        prompts = {
+            "Neutral": f"Rewrite clearly: {text[:200]}",  # Limit input length
+            "Suspenseful": f"Make mysterious: {text[:200]}",
+            "Inspiring": f"Make motivational: {text[:200]}",
+            "Conversational": f"Make conversational: {text[:200]}",
+            "Educational": f"Explain clearly: {text[:200]}"
         }
-        prompt = f"{advanced_prompts.get(tone, advanced_prompts['Neutral'])}\n{text}\n\nRewritten version:"
+        
+        prompt = prompts.get(tone, f"Rewrite: {text[:200]}")
 
         try:
-            inputs = self.granite_tokenizer.encode(prompt, return_tensors="pt").to(self.device)
+            inputs = self.granite_tokenizer.encode(prompt, return_tensors="pt", max_length=256, truncation=True).to(self.device)
+            
             with torch.no_grad():
                 outputs = self.granite_model.generate(
                     inputs,
-                    max_new_tokens=500,
-                    temperature=0.8,
+                    max_new_tokens=150,  # Reduced from 500
+                    temperature=0.7,    # Reduced for stability
                     do_sample=True,
-                    top_p=0.9,
-                    repetition_penalty=1.1,
-                    pad_token_id=self.granite_tokenizer.eos_token_id
+                    top_p=0.8,
+                    repetition_penalty=1.05,
+                    pad_token_id=self.granite_tokenizer.eos_token_id,
+                    early_stopping=True
                 )
+            
             generated_text = self.granite_tokenizer.decode(outputs[0], skip_special_tokens=True)
-            rewritten = generated_text.split("Rewritten version:")[-1].strip()
+            rewritten = generated_text.replace(prompt, "").strip()
+            
+            # Clean up memory
+            del inputs, outputs
+            torch.cuda.empty_cache() if torch.cuda.is_available() else None
+            
             return rewritten if len(rewritten) > 10 else text
         except Exception as e:
-            st.error(f"Error in text rewriting: {e}")
-            return text
+            st.error(f"Text rewriting failed: {e}")
+            # Fallback to basic enhancement
+            return self.enhance_text_for_tone(text, tone)
 
     def load_granite_model(self):
         try:
-            model_name = "ibm-granite/granite-3b-code-instruct"
-            self.granite_tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+            # Use smaller, more stable model for Streamlit Cloud
+            model_name = "microsoft/DialoGPT-medium"
+            self.granite_tokenizer = AutoTokenizer.from_pretrained(model_name)
             self.granite_model = AutoModelForCausalLM.from_pretrained(
                 model_name,
-                torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
-                device_map="auto" if torch.cuda.is_available() else None,
-                trust_remote_code=True
-            )
+                torch_dtype=torch.float32,  # Use float32 for stability
+                device_map=None,  # Avoid auto device mapping on cloud
+                low_cpu_mem_usage=True
+            ).to(self.device)
             if self.granite_tokenizer.pad_token is None:
                 self.granite_tokenizer.pad_token = self.granite_tokenizer.eos_token
             return True
-        except:
+        except Exception as e:
+            st.warning(f"Advanced model failed to load: {e}")
             return self._load_fallback_model()
 
     def _load_fallback_model(self):
         try:
-            model_name = "gpt2-medium"
+            # Even smaller fallback model
+            model_name = "gpt2"
             self.granite_tokenizer = AutoTokenizer.from_pretrained(model_name)
-            self.granite_model = AutoModelForCausalLM.from_pretrained(model_name).to(self.device)
+            self.granite_model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                torch_dtype=torch.float32,
+                low_cpu_mem_usage=True
+            ).to(self.device)
             self.granite_tokenizer.pad_token = self.granite_tokenizer.eos_token
             return True
-        except:
+        except Exception as e:
+            st.error(f"Failed to load any text model: {e}")
             return False
 
     def initialize_models(self):
@@ -442,29 +490,38 @@ class TextEnhancer:
 # ---------------- Bark TTS ----------------
 class BarkTTS:
     def __init__(self):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.processor = AutoProcessor.from_pretrained("suno/bark")
+        self.device = "cpu"  # Force CPU for Streamlit Cloud stability
+        self.processor = None
         self.model = None
 
     def load_model(self):
-        """Load Bark model"""
+        """Load Bark model with better error handling"""
         if self.model is not None:
             return True
         
         try:
-            # Try GPU with FP16
-            self.model = BarkModel.from_pretrained("suno/bark", torch_dtype=torch.float16)
+            # Load processor first
+            if self.processor is None:
+                self.processor = AutoProcessor.from_pretrained("suno/bark")
+            
+            # Load model with conservative settings for cloud deployment
+            self.model = BarkModel.from_pretrained(
+                "suno/bark", 
+                torch_dtype=torch.float32,  # Use float32 for stability
+                low_cpu_mem_usage=True
+            )
             self.model.to(self.device)
+            
+            # Enable eval mode to save memory
+            self.model.eval()
             return True
-        except RuntimeError:
-            gc.collect()
-            torch.cuda.empty_cache()
-            self.device = "cpu"
-            self.model = BarkModel.from_pretrained("suno/bark", torch_dtype=torch.float32)
-            self.model.to(self.device)
-            return True
+            
         except Exception as e:
             st.error(f"Failed to load Bark model: {e}")
+            # Clean up on failure
+            self.model = None
+            self.processor = None
+            gc.collect()
             return False
 
     def convert_audio_format(self, audio_array: np.ndarray) -> np.ndarray:
@@ -493,42 +550,61 @@ class BarkTTS:
         return audio_array
 
     def generate_audio(self, text: str, preset: str, mood: str) -> tuple:
-        """Generate audio and return audio data and sample rate"""
+        """Generate audio with improved error handling and memory management"""
         if not self.load_model():
             return None, None
         
-        # Enhanced mood mapping
+        # Limit text length for stability
+        if len(text) > 200:
+            text = text[:200] + "..."
+            st.warning("Text truncated to 200 characters for stability")
+        
+        # Enhanced mood mapping (simplified)
         mood_mapping = {
             "neutral": "",
-            "suspenseful": "[Whispers mysteriously]",
-            "inspiring": "[Excited and motivated]",
-            "conversational": "[Casual and friendly]",
-            "educational": "[Clear and instructive]",
-            "happy": "[Happy]",
-            "sad": "[Sad]",
-            "angry": "[Angry]",
-            "surprised": "[Surprised]",
-            "scared": "[Fearful]",
-            "excited": "[Excited]",
-            "calm": "[Calm]"
+            "suspenseful": "[whispers]",
+            "inspiring": "[excited]",
+            "conversational": "[friendly]",
+            "educational": "[clear]",
+            "happy": "[happy]",
+            "sad": "[sad]",
+            "angry": "[angry]",
+            "surprised": "[surprised]",
+            "scared": "[scared]",
+            "excited": "[excited]",
+            "calm": "[calm]"
         }
         
-        mood_tag = mood_mapping.get(mood.lower(), f"[{mood}]")
+        mood_tag = mood_mapping.get(mood.lower(), "")
         styled_text = f"{mood_tag} {text}" if mood_tag else text
         
-        inputs = self.processor(styled_text, voice_preset=preset, return_tensors="pt")
-        for k, v in inputs.items():
-            inputs[k] = v.to(self.device)
+        try:
+            inputs = self.processor(styled_text, voice_preset=preset, return_tensors="pt")
+            
+            # Move inputs to device
+            for k, v in inputs.items():
+                if hasattr(v, 'to'):
+                    inputs[k] = v.to(self.device)
 
-        with torch.no_grad():
-            audio_array = self.model.generate(**inputs)
+            with torch.no_grad():
+                audio_array = self.model.generate(**inputs)
 
-        # Convert to proper format
-        audio_array = audio_array.cpu().numpy()
-        audio_array = self.convert_audio_format(audio_array)
-        
-        sample_rate = self.model.generation_config.sample_rate
-        return audio_array, sample_rate
+            # Convert to proper format
+            audio_array = audio_array.cpu().numpy()
+            audio_array = self.convert_audio_format(audio_array)
+            
+            # Clean up
+            del inputs
+            gc.collect()
+            
+            sample_rate = self.model.generation_config.sample_rate
+            return audio_array, sample_rate
+            
+        except Exception as e:
+            st.error(f"Audio generation failed: {e}")
+            # Clean up on error
+            gc.collect()
+            return None, None
 
 # ---------------- Streamlit App ----------------
 def initialize_session_state():
@@ -700,112 +776,82 @@ def main():
                     st.success("Edits saved!")
     
     with col2:
-        st.header("🎧 Audio Generation")
+        # Create a container for better alignment
+        audio_container = st.container()
         
-        # Audio generation section
-        text_to_convert = st.session_state.enhanced_text if st.session_state.enhanced_text else user_text
-        
-        if text_to_convert:
-            st.subheader("🎵 Generate Audio")
+        with audio_container:
+            st.markdown('<div class="audio-generation-container">', unsafe_allow_html=True)
+            st.header("🎧 Audio Generation")
             
-            # Display selected settings
-            with st.expander("📋 Current Settings", expanded=False):
-                st.write(f"**Voice:** {voice_descriptions.get(selected_voice, selected_voice)}")
-                st.write(f"**Tone:** {tone_descriptions.get(selected_tone, selected_tone)}")
-                st.write(f"**Emotion:** {selected_emotion.title()}")
-                st.write(f"**Text Length:** {len(text_to_convert)} characters")
+            # Audio generation section
+            text_to_convert = st.session_state.enhanced_text if st.session_state.enhanced_text else user_text
             
-            # Chunking option for long texts
-            chunk_audio = False
-            if len(text_to_convert) > 1000:
-                chunk_audio = st.checkbox(
-                    f"📏 Process in chunks (Text is {len(text_to_convert)} characters)",
-                    help="Recommended for texts longer than 1000 characters"
-                )
-            
-            # Generate audio button
-            if st.button("🎬 Generate Audiobook", type="primary"):
-                if st.session_state.bark_tts is None:
-                    st.error("Please load models first!")
-                else:
-                    with st.spinner("Generating audio... This may take a while."):
-                        try:
-                            if chunk_audio:
-                                # Process in chunks
-                                sentences = text_to_convert.split('. ')
-                                chunks = []
-                                current_chunk = ""
-                                
-                                for sentence in sentences:
-                                    if len(current_chunk) + len(sentence) < 500:
-                                        current_chunk += sentence + ". "
-                                    else:
-                                        if current_chunk:
-                                            chunks.append(current_chunk.strip())
-                                        current_chunk = sentence + ". "
-                                
-                                if current_chunk:
-                                    chunks.append(current_chunk.strip())
-                                
-                                st.info(f"Processing {len(chunks)} chunks...")
-                                
-                                # Generate audio for each chunk
-                                combined_audio = []
-                                chunk_progress = st.progress(0)
-                                
-                                for i, chunk in enumerate(chunks):
-                                    audio_data, sample_rate = st.session_state.bark_tts.generate_audio(
-                                        chunk, selected_voice, selected_emotion
-                                    )
-                                    if audio_data is not None:
-                                        combined_audio.append(audio_data)
-                                        # Add small pause between chunks
-                                        silence = np.zeros(int(sample_rate * 0.5))
-                                        combined_audio.append(silence.astype(audio_data.dtype))
-                                    
-                                    chunk_progress.progress((i + 1) / len(chunks))
-                                
-                                # Combine all chunks
-                                final_audio = np.concatenate(combined_audio)
-                                chunk_progress.empty()
-                                
-                            else:
-                                # Process as single piece
+            if text_to_convert:
+                st.subheader("🎵 Generate Audio")
+                
+                # Display selected settings
+                with st.expander("📋 Current Settings", expanded=False):
+                    st.write(f"**Voice:** {voice_descriptions.get(selected_voice, selected_voice)}")
+                    st.write(f"**Tone:** {tone_descriptions.get(selected_tone, selected_tone)}")
+                    st.write(f"**Emotion:** {selected_emotion.title()}")
+                    st.write(f"**Text Length:** {len(text_to_convert)} characters")
+                
+                # Warning for long texts
+                if len(text_to_convert) > 200:
+                    st.warning("⚠️ Text will be truncated to 200 characters for Streamlit Cloud stability")
+                
+                # Simplified chunking (removed for cloud stability)
+                st.info("💡 For best results on Streamlit Cloud, keep text under 200 characters")
+                
+                # Generate audio button
+                if st.button("🎬 Generate Audiobook", type="primary"):
+                    if st.session_state.bark_tts is None:
+                        st.error("Please load models first!")
+                    else:
+                        with st.spinner("Generating audio... Please wait..."):
+                            try:
+                                # Single processing only for cloud stability
                                 final_audio, sample_rate = st.session_state.bark_tts.generate_audio(
                                     text_to_convert, selected_voice, selected_emotion
                                 )
-                            
-                            if final_audio is not None:
-                                # Save to temporary file
-                                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
-                                    scipy.io.wavfile.write(tmp_file.name, sample_rate, final_audio)
+                                
+                                if final_audio is not None:
+                                    # Save to temporary file
+                                    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
+                                        scipy.io.wavfile.write(tmp_file.name, sample_rate, final_audio)
+                                        
+                                        # Read the file for download
+                                        with open(tmp_file.name, "rb") as audio_file:
+                                            audio_bytes = audio_file.read()
                                     
-                                    # Read the file for download
-                                    with open(tmp_file.name, "rb") as audio_file:
-                                        audio_bytes = audio_file.read()
-                                
-                                # Display audio player
-                                st.success("🎉 Audio generated successfully!")
-                                st.audio(audio_bytes, format="audio/wav")
-                                
-                                # Download button
-                                st.download_button(
-                                    label="📥 Download Audiobook",
-                                    data=audio_bytes,
-                                    file_name=f"audiobook_{selected_tone}_{selected_emotion}.wav",
-                                    mime="audio/wav"
-                                )
-                                
-                                # Clean up
-                                os.unlink(tmp_file.name)
-                                
-                            else:
-                                st.error("Failed to generate audio. Please try again.")
-                        
-                        except Exception as e:
-                            st.error(f"Error generating audio: {e}")
-        else:
-            st.info("👆 Enter text in the left panel to generate audio")
+                                    # Display audio player
+                                    st.success("🎉 Audio generated successfully!")
+                                    st.audio(audio_bytes, format="audio/wav")
+                                    
+                                    # Download button
+                                    st.download_button(
+                                        label="📥 Download Audiobook",
+                                        data=audio_bytes,
+                                        file_name=f"echoverse_{selected_tone}_{selected_emotion}.wav",
+                                        mime="audio/wav"
+                                    )
+                                    
+                                    # Clean up
+                                    try:
+                                        os.unlink(tmp_file.name)
+                                    except:
+                                        pass
+                                    
+                                else:
+                                    st.error("Failed to generate audio. Please try with shorter text or different settings.")
+                            
+                            except Exception as e:
+                                st.error(f"Error generating audio: {e}")
+                                st.info("Try reducing text length or reloading the page")
+            else:
+                st.info("👆 Enter text in the left panel to generate audio")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
     
     # Footer
     st.markdown("---")
