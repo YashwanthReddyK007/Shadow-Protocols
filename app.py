@@ -13,7 +13,7 @@ import base64
 
 # Set page config
 st.set_page_config(
-    page_title="🎬 Bark TTS Audiobook Generator",
+    page_title="🎬 EchoVerse",
     page_icon="🎧",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -39,18 +39,23 @@ def get_custom_css():
     .main .block-container {
         background: rgba(15, 15, 30, 0.85);
         backdrop-filter: blur(10px);
-        border-radius: 15px;
-        border: 1px solid rgba(76, 175, 80, 0.3);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-        padding: 2rem;
-        margin-top: 1rem;
+        border-radius: 20px;
+        border: 2px solid rgba(76, 175, 80, 0.4);
+        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+        padding: 2.5rem;
+        margin: 1.5rem 0;
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
     }
     
     /* Sidebar styling */
     .css-1d391kg {
-        background: rgba(20, 20, 40, 0.9) !important;
-        backdrop-filter: blur(15px);
-        border-right: 2px solid rgba(76, 175, 80, 0.4);
+        background: rgba(20, 20, 40, 0.95) !important;
+        backdrop-filter: blur(20px);
+        border-right: 3px solid rgba(76, 175, 80, 0.5);
+        min-width: 300px !important;
+        padding: 1.5rem !important;
     }
     
     /* Title styling */
@@ -59,8 +64,10 @@ def get_custom_css():
         font-family: 'Orbitron', monospace !important;
         font-weight: 900 !important;
         text-align: center !important;
-        text-shadow: 0 0 20px rgba(76, 175, 80, 0.5) !important;
-        margin-bottom: 2rem !important;
+        text-shadow: 0 0 30px rgba(76, 175, 80, 0.7) !important;
+        margin-bottom: 2.5rem !important;
+        font-size: 3.2rem !important;
+        letter-spacing: 2px !important;
     }
     
     /* Headers styling */
@@ -68,7 +75,17 @@ def get_custom_css():
         color: #81C784 !important;
         font-family: 'Rajdhani', sans-serif !important;
         font-weight: 700 !important;
-        text-shadow: 0 0 10px rgba(129, 199, 132, 0.3) !important;
+        text-shadow: 0 0 15px rgba(129, 199, 132, 0.4) !important;
+        margin-bottom: 1.5rem !important;
+        font-size: 1.8rem !important;
+    }
+    
+    /* Sidebar headers */
+    .css-1d391kg h2, .css-1d391kg h3 {
+        font-size: 1.4rem !important;
+        margin-bottom: 1rem !important;
+        padding-bottom: 0.5rem !important;
+        border-bottom: 1px solid rgba(76, 175, 80, 0.3) !important;
     }
     
     /* Text styling */
@@ -76,15 +93,33 @@ def get_custom_css():
         color: #E8F5E8 !important;
         font-family: 'Rajdhani', sans-serif !important;
         font-weight: 400 !important;
+        font-size: 1.1rem !important;
+        line-height: 1.6 !important;
     }
     
     /* Input fields */
     .stTextArea textarea, .stSelectbox select, .stTextInput input {
-        background: rgba(30, 30, 60, 0.8) !important;
+        background: rgba(30, 30, 60, 0.9) !important;
         color: #E8F5E8 !important;
-        border: 1px solid rgba(76, 175, 80, 0.5) !important;
-        border-radius: 8px !important;
-        backdrop-filter: blur(5px) !important;
+        border: 2px solid rgba(76, 175, 80, 0.6) !important;
+        border-radius: 12px !important;
+        backdrop-filter: blur(8px) !important;
+        padding: 1rem !important;
+        font-size: 1rem !important;
+        font-family: 'Rajdhani', sans-serif !important;
+        min-height: 45px !important;
+    }
+    
+    /* Text areas specific sizing */
+    .stTextArea textarea {
+        min-height: 200px !important;
+        resize: vertical !important;
+    }
+    
+    /* Select boxes */
+    .stSelectbox select {
+        padding: 0.8rem 1rem !important;
+        font-weight: 500 !important;
     }
     
     /* Buttons */
@@ -92,28 +127,35 @@ def get_custom_css():
         background: linear-gradient(45deg, #4CAF50, #45a049) !important;
         color: white !important;
         border: none !important;
-        border-radius: 10px !important;
+        border-radius: 12px !important;
         font-family: 'Rajdhani', sans-serif !important;
         font-weight: 600 !important;
-        box-shadow: 0 4px 15px 0 rgba(76, 175, 80, 0.4) !important;
+        font-size: 1.1rem !important;
+        padding: 0.8rem 1.5rem !important;
+        min-height: 50px !important;
+        box-shadow: 0 6px 20px 0 rgba(76, 175, 80, 0.4) !important;
         transition: all 0.3s ease !important;
+        letter-spacing: 0.5px !important;
     }
     
     .stButton > button:hover {
         background: linear-gradient(45deg, #45a049, #4CAF50) !important;
-        box-shadow: 0 6px 20px 0 rgba(76, 175, 80, 0.6) !important;
-        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px 0 rgba(76, 175, 80, 0.6) !important;
+        transform: translateY(-3px) !important;
     }
     
     /* Primary button */
     .stButton > button[kind="primary"] {
         background: linear-gradient(45deg, #FF5722, #FF7043) !important;
-        box-shadow: 0 4px 15px 0 rgba(255, 87, 34, 0.4) !important;
+        box-shadow: 0 6px 20px 0 rgba(255, 87, 34, 0.4) !important;
+        min-height: 55px !important;
+        font-size: 1.2rem !important;
+        padding: 1rem 2rem !important;
     }
     
     .stButton > button[kind="primary"]:hover {
         background: linear-gradient(45deg, #FF7043, #FF5722) !important;
-        box-shadow: 0 6px 20px 0 rgba(255, 87, 34, 0.6) !important;
+        box-shadow: 0 8px 25px 0 rgba(255, 87, 34, 0.6) !important;
     }
     
     /* Progress bars */
@@ -131,22 +173,44 @@ def get_custom_css():
     
     /* Expander */
     .streamlit-expanderHeader {
-        background: rgba(30, 30, 60, 0.8) !important;
-        border-radius: 10px !important;
+        background: rgba(30, 30, 60, 0.9) !important;
+        border-radius: 12px !important;
         color: #E8F5E8 !important;
         font-family: 'Rajdhani', sans-serif !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        padding: 1rem 1.5rem !important;
+        border: 1px solid rgba(76, 175, 80, 0.4) !important;
     }
     
     .streamlit-expanderContent {
-        background: rgba(20, 20, 40, 0.9) !important;
-        backdrop-filter: blur(10px) !important;
-        border-radius: 0 0 10px 10px !important;
+        background: rgba(20, 20, 40, 0.95) !important;
+        backdrop-filter: blur(15px) !important;
+        border-radius: 0 0 12px 12px !important;
+        padding: 1.5rem !important;
+        border: 1px solid rgba(76, 175, 80, 0.3) !important;
+        border-top: none !important;
     }
     
     /* Checkbox */
     .stCheckbox label {
         color: #E8F5E8 !important;
         font-family: 'Rajdhani', sans-serif !important;
+        font-size: 1.1rem !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Column spacing */
+    .css-1r6slb0 {
+        padding: 0 1rem !important;
+    }
+    
+    /* Info boxes */
+    .stInfo, .stSuccess, .stWarning, .stError {
+        padding: 1rem 1.5rem !important;
+        border-radius: 12px !important;
+        font-size: 1rem !important;
+        margin: 1rem 0 !important;
     }
     
     /* Team info footer */
@@ -155,40 +219,44 @@ def get_custom_css():
         bottom: 0;
         left: 0;
         right: 0;
-        background: linear-gradient(135deg, rgba(76, 175, 80, 0.95), rgba(67, 160, 71, 0.95));
-        backdrop-filter: blur(20px);
-        border-top: 2px solid rgba(129, 199, 132, 0.5);
-        padding: 15px 0;
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.98), rgba(67, 160, 71, 0.98));
+        backdrop-filter: blur(25px);
+        border-top: 3px solid rgba(129, 199, 132, 0.6);
+        padding: 20px 0;
         text-align: center;
         z-index: 1000;
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 -6px 30px rgba(0, 0, 0, 0.4);
+        min-height: 80px;
     }
     
     .team-name {
         font-family: 'Orbitron', monospace;
-        font-size: 24px;
+        font-size: 28px;
         font-weight: 900;
         color: #FFFFFF;
-        text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-        margin-bottom: 8px;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+        margin-bottom: 10px;
+        letter-spacing: 3px;
     }
     
     .team-members {
         font-family: 'Rajdhani', sans-serif;
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 600;
         color: #F1F8E9;
-        text-shadow: 0 0 10px rgba(241, 248, 233, 0.3);
+        text-shadow: 0 0 12px rgba(241, 248, 233, 0.4);
+        letter-spacing: 1px;
     }
     
     .team-lead {
         color: #FFD54F;
         font-weight: 700;
+        text-shadow: 0 0 15px rgba(255, 213, 79, 0.5);
     }
     
     /* Adjust main content to account for footer */
     .main .block-container {
-        padding-bottom: 120px !important;
+        padding-bottom: 140px !important;
     }
     
     /* Scrollbar styling */
@@ -211,21 +279,42 @@ def get_custom_css():
     
     /* Audio player styling */
     .stAudio {
-        background: rgba(30, 30, 60, 0.8) !important;
-        border-radius: 10px !important;
-        padding: 10px !important;
-        border: 1px solid rgba(76, 175, 80, 0.3) !important;
+        background: rgba(30, 30, 60, 0.9) !important;
+        border-radius: 15px !important;
+        padding: 1.5rem !important;
+        border: 2px solid rgba(76, 175, 80, 0.4) !important;
+        margin: 1.5rem 0 !important;
+        box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2) !important;
     }
     
     /* Download button special styling */
     .stDownloadButton > button {
         background: linear-gradient(45deg, #2196F3, #21CBF3) !important;
-        box-shadow: 0 4px 15px 0 rgba(33, 150, 243, 0.4) !important;
+        box-shadow: 0 6px 20px 0 rgba(33, 150, 243, 0.4) !important;
+        min-height: 50px !important;
+        font-size: 1.1rem !important;
+        padding: 0.8rem 1.8rem !important;
+        border-radius: 12px !important;
     }
     
     .stDownloadButton > button:hover {
         background: linear-gradient(45deg, #21CBF3, #2196F3) !important;
-        box-shadow: 0 6px 20px 0 rgba(33, 150, 243, 0.6) !important;
+        box-shadow: 0 8px 25px 0 rgba(33, 150, 243, 0.6) !important;
+        transform: translateY(-3px) !important;
+    }
+    
+    /* Spinner customization */
+    .stSpinner > div {
+        border-top-color: #4CAF50 !important;
+    }
+    
+    /* Labels and small text */
+    .stSelectbox label, .stTextArea label, .stTextInput label {
+        color: #81C784 !important;
+        font-family: 'Rajdhani', sans-serif !important;
+        font-weight: 600 !important;
+        font-size: 1.1rem !important;
+        margin-bottom: 0.5rem !important;
     }
     </style>
     """
@@ -489,7 +578,7 @@ def main():
     # Apply custom CSS
     st.markdown(get_custom_css(), unsafe_allow_html=True)
     
-    st.title("🎬 Bark TTS Audiobook Generator")
+    st.title("🎬 EchoVerse")
     st.markdown("Transform your text into engaging audiobooks with emotion and tone!")
     
     # Initialize session state
@@ -722,7 +811,7 @@ def main():
     st.markdown("---")
     with st.expander("ℹ️ About", expanded=False):
         st.markdown("""
-        **Bark TTS Audiobook Generator** combines AI text enhancement with high-quality speech synthesis:
+        **EchoVerse** combines AI text enhancement with high-quality speech synthesis:
         
         🔧 **Features:**
         - **Text Enhancement**: Basic pattern-based improvements for different tones
