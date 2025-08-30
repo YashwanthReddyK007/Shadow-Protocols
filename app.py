@@ -205,7 +205,7 @@ def get_custom_css():
     
     /* MAIN COLUMN ALIGNMENT FIXES */
     [data-testid="column"] {
-        padding: 0 0.75rem !important;
+        padding: 0 1rem !important;
         height: 100% !important;
         display: flex !important;
         flex-direction: column !important;
@@ -213,62 +213,31 @@ def get_custom_css():
     
     [data-testid="column"]:first-child {
         padding-left: 0 !important;
+        padding-right: 1.5rem !important;
     }
     
     [data-testid="column"]:last-child {
         padding-right: 0 !important;
+        padding-left: 1.5rem !important;
     }
     
-    /* Column content containers */
-    .column-content {
-        background: rgba(25, 25, 50, 0.9) !important;
-        border-radius: 15px !important;
-        padding: 2rem !important;
-        border: 2px solid rgba(76, 175, 80, 0.4) !important;
-        margin: 0 !important;
-        height: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
-    }
-    
-    /* Left column specific styling */
-    .text-input-container {
+    /* Remove column content containers - no boxes */
+    .column-section {
+        padding: 1.5rem 0 !important;
         flex-grow: 1 !important;
         display: flex !important;
         flex-direction: column !important;
-    }
-    
-    /* Right column specific styling */
-    .audio-generation-container {
-        flex-grow: 1 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: flex-start !important;
     }
     
     /* Button container alignment */
-    .button-container {
+    .button-row {
         display: flex !important;
         gap: 1rem !important;
-        margin-top: 1rem !important;
-        margin-bottom: 1.5rem !important;
+        margin: 1rem 0 !important;
     }
     
-    .button-container .stButton {
+    .button-row .stButton {
         flex: 1 !important;
-    }
-    
-    /* Enhanced text display */
-    .enhanced-text-container {
-        flex-grow: 1 !important;
-        margin-top: 1.5rem !important;
-    }
-    
-    /* Audio controls container */
-    .audio-controls {
-        margin-top: auto !important;
-        padding-top: 2rem !important;
     }
     
     /* Info boxes */
@@ -759,8 +728,8 @@ def main():
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        # Wrap content in aligned container
-        st.markdown('<div class="column-content text-input-container">', unsafe_allow_html=True)
+        # Clean section without unnecessary containers
+        st.markdown('<div class="column-section">', unsafe_allow_html=True)
         
         st.header("📝 Text Input & Enhancement")
         
@@ -772,8 +741,7 @@ def main():
             key="text_input"
         )
         
-        # Text processing buttons in aligned container
-        st.markdown('<div class="button-container">', unsafe_allow_html=True)
+        # Text processing buttons
         col1a, col1b = st.columns(2)
         
         with col1a:
@@ -799,11 +767,8 @@ def main():
                         st.session_state.original_text = user_text
                         st.success("Text rewritten and enhanced!")
         
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Display enhanced text in container
+        # Display enhanced text
         if st.session_state.enhanced_text:
-            st.markdown('<div class="enhanced-text-container">', unsafe_allow_html=True)
             st.subheader("📖 Enhanced Text")
             st.text_area(
                 "Enhanced version:",
@@ -823,14 +788,12 @@ def main():
                 if st.button("💾 Save Edits"):
                     st.session_state.enhanced_text = edited_text
                     st.success("Edits saved!")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        # Wrap content in aligned container
-        st.markdown('<div class="column-content audio-generation-container">', unsafe_allow_html=True)
+        # Clean section without unnecessary containers
+        st.markdown('<div class="column-section">', unsafe_allow_html=True)
         
         st.header("🎧 Audio Generation")
         
@@ -853,9 +816,6 @@ def main():
             
             # Simplified chunking (removed for cloud stability)
             st.info("💡 For best results on Streamlit Cloud, keep text under 200 characters")
-            
-            # Audio controls in container
-            st.markdown('<div class="audio-controls">', unsafe_allow_html=True)
             
             # Generate audio button
             if st.button("🎬 Generate Audiobook", type="primary"):
@@ -902,8 +862,6 @@ def main():
                         except Exception as e:
                             st.error(f"Error generating audio: {e}")
                             st.info("Try reducing text length or reloading the page")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.info("👆 Enter text in the left panel to generate audio")
         
