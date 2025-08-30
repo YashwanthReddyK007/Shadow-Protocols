@@ -47,6 +47,7 @@ def get_custom_css():
         max-width: 1400px;
         margin-left: auto;
         margin-right: auto;
+        padding-bottom: 140px !important;
     }
     
     /* Sidebar styling */
@@ -136,6 +137,7 @@ def get_custom_css():
         box-shadow: 0 6px 20px 0 rgba(76, 175, 80, 0.4) !important;
         transition: all 0.3s ease !important;
         letter-spacing: 0.5px !important;
+        width: 100% !important;
     }
     
     .stButton > button:hover {
@@ -148,9 +150,10 @@ def get_custom_css():
     .stButton > button[kind="primary"] {
         background: linear-gradient(45deg, #FF5722, #FF7043) !important;
         box-shadow: 0 6px 20px 0 rgba(255, 87, 34, 0.4) !important;
-        min-height: 55px !important;
-        font-size: 1.2rem !important;
+        min-height: 60px !important;
+        font-size: 1.3rem !important;
         padding: 1rem 2rem !important;
+        font-weight: 700 !important;
     }
     
     .stButton > button[kind="primary"]:hover {
@@ -200,33 +203,72 @@ def get_custom_css():
         font-weight: 500 !important;
     }
     
-    /* Column spacing and alignment */
-    .css-1r6slb0, .element-container {
-        padding: 0 1rem !important;
-    }
-    
-    /* Main columns equal height */
-    .css-12oz5g7 {
-        display: flex !important;
-        align-items: stretch !important;
-    }
-    
-    .css-12oz5g7 > div {
+    /* MAIN COLUMN ALIGNMENT FIXES */
+    [data-testid="column"] {
+        padding: 0 0.75rem !important;
+        height: 100% !important;
         display: flex !important;
         flex-direction: column !important;
     }
     
-    /* Audio generation box alignment */
-    .audio-generation-container {
+    [data-testid="column"]:first-child {
+        padding-left: 0 !important;
+    }
+    
+    [data-testid="column"]:last-child {
+        padding-right: 0 !important;
+    }
+    
+    /* Column content containers */
+    .column-content {
         background: rgba(25, 25, 50, 0.9) !important;
         border-radius: 15px !important;
-        padding: 1.5rem !important;
+        padding: 2rem !important;
         border: 2px solid rgba(76, 175, 80, 0.4) !important;
-        margin-top: 0 !important;
-        min-height: 400px !important;
+        margin: 0 !important;
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    /* Left column specific styling */
+    .text-input-container {
+        flex-grow: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    
+    /* Right column specific styling */
+    .audio-generation-container {
+        flex-grow: 1 !important;
         display: flex !important;
         flex-direction: column !important;
         justify-content: flex-start !important;
+    }
+    
+    /* Button container alignment */
+    .button-container {
+        display: flex !important;
+        gap: 1rem !important;
+        margin-top: 1rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+    
+    .button-container .stButton {
+        flex: 1 !important;
+    }
+    
+    /* Enhanced text display */
+    .enhanced-text-container {
+        flex-grow: 1 !important;
+        margin-top: 1.5rem !important;
+    }
+    
+    /* Audio controls container */
+    .audio-controls {
+        margin-top: auto !important;
+        padding-top: 2rem !important;
     }
     
     /* Info boxes */
@@ -235,11 +277,6 @@ def get_custom_css():
         border-radius: 12px !important;
         font-size: 1rem !important;
         margin: 1rem 0 !important;
-    }
-    
-    /* Equal column heights */
-    .block-container > div > div > div > div {
-        height: 100% !important;
     }
     
     /* Team info footer */
@@ -283,11 +320,6 @@ def get_custom_css():
         text-shadow: 0 0 15px rgba(255, 213, 79, 0.5);
     }
     
-    /* Adjust main content to account for footer */
-    .main .block-container {
-        padding-bottom: 140px !important;
-    }
-    
     /* Scrollbar styling */
     ::-webkit-scrollbar {
         width: 8px;
@@ -320,10 +352,11 @@ def get_custom_css():
     .stDownloadButton > button {
         background: linear-gradient(45deg, #2196F3, #21CBF3) !important;
         box-shadow: 0 6px 20px 0 rgba(33, 150, 243, 0.4) !important;
-        min-height: 50px !important;
-        font-size: 1.1rem !important;
-        padding: 0.8rem 1.8rem !important;
+        min-height: 55px !important;
+        font-size: 1.2rem !important;
+        padding: 1rem 2rem !important;
         border-radius: 12px !important;
+        font-weight: 600 !important;
     }
     
     .stDownloadButton > button:hover {
@@ -344,6 +377,15 @@ def get_custom_css():
         font-weight: 600 !important;
         font-size: 1.1rem !important;
         margin-bottom: 0.5rem !important;
+    }
+    
+    /* Ensure equal height containers */
+    .element-container {
+        height: 100% !important;
+    }
+    
+    .element-container > div {
+        height: 100% !important;
     }
     </style>
     """
@@ -668,220 +710,4 @@ def main():
         st.subheader("🎙️ Voice Settings")
         voice_options = [f"v2/en_speaker_{i}" for i in range(10)]
         voice_descriptions = {
-            "v2/en_speaker_0": "Speaker 0 - Male, Clear",
-            "v2/en_speaker_1": "Speaker 1 - Female, Warm",
-            "v2/en_speaker_2": "Speaker 2 - Male, Deep",
-            "v2/en_speaker_3": "Speaker 3 - Female, Energetic",
-            "v2/en_speaker_4": "Speaker 4 - Male, Calm",
-            "v2/en_speaker_5": "Speaker 5 - Female, Professional",
-            "v2/en_speaker_6": "Speaker 6 - Male, Narrative",
-            "v2/en_speaker_7": "Speaker 7 - Female, Expressive",
-            "v2/en_speaker_8": "Speaker 8 - Male, Authoritative",
-            "v2/en_speaker_9": "Speaker 9 - Female, Gentle"
-        }
-        
-        selected_voice = st.selectbox(
-            "Choose Voice",
-            voice_options,
-            index=6,
-            format_func=lambda x: voice_descriptions.get(x, x)
-        )
-        
-        # Tone selection
-        st.subheader("🎨 Tone Settings")
-        tone_options = ["Neutral", "Suspenseful", "Inspiring", "Conversational", "Educational"]
-        tone_descriptions = {
-            "Neutral": "📝 Professional and clear",
-            "Suspenseful": "🕵️ Mysterious and intriguing",
-            "Inspiring": "⭐ Motivational and uplifting",
-            "Conversational": "💬 Friendly and casual",
-            "Educational": "🎓 Instructive and informative"
-        }
-        
-        selected_tone = st.selectbox(
-            "Choose Tone",
-            tone_options,
-            format_func=lambda x: tone_descriptions.get(x, x)
-        )
-        
-        # Additional mood options
-        st.subheader("🎭 Emotion Settings")
-        emotion_options = ["neutral", "happy", "sad", "excited", "calm", "surprised", "angry", "scared"]
-        selected_emotion = st.selectbox("Choose Emotion", emotion_options)
-        
-        # Load models button
-        if st.button("🔄 Load Models", type="primary"):
-            load_models()
-    
-    # Main content
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        st.header("📝 Text Input & Enhancement")
-        
-        # Text input
-        user_text = st.text_area(
-            "Enter your text:",
-            height=200,
-            placeholder="Enter the text you want to convert to audiobook...",
-            key="text_input"
-        )
-        
-        # Text processing buttons
-        col1a, col1b = st.columns(2)
-        
-        with col1a:
-            if st.button("✨ Enhance Text Only", disabled=not user_text):
-                if st.session_state.text_enhancer is None:
-                    st.error("Please load models first!")
-                else:
-                    with st.spinner("Enhancing text..."):
-                        enhanced = st.session_state.text_enhancer.enhance_text_for_tone(user_text, selected_tone)
-                        st.session_state.enhanced_text = enhanced
-                        st.session_state.original_text = user_text
-                        st.success("Text enhanced!")
-        
-        with col1b:
-            if st.button("🚀 AI Rewrite Text", disabled=not user_text):
-                if st.session_state.text_enhancer is None:
-                    st.error("Please load models first!")
-                else:
-                    with st.spinner("Rewriting text with AI..."):
-                        rewritten = st.session_state.text_enhancer.rewrite_text_with_advanced_tone(user_text, selected_tone)
-                        enhanced = st.session_state.text_enhancer.enhance_text_for_tone(rewritten, selected_tone)
-                        st.session_state.enhanced_text = enhanced
-                        st.session_state.original_text = user_text
-                        st.success("Text rewritten and enhanced!")
-        
-        # Display enhanced text
-        if st.session_state.enhanced_text:
-            st.subheader("📖 Enhanced Text")
-            st.text_area(
-                "Enhanced version:",
-                value=st.session_state.enhanced_text,
-                height=150,
-                key="enhanced_display"
-            )
-            
-            # Option to edit enhanced text
-            if st.checkbox("✏️ Edit enhanced text"):
-                edited_text = st.text_area(
-                    "Edit the enhanced text:",
-                    value=st.session_state.enhanced_text,
-                    height=150,
-                    key="edit_enhanced"
-                )
-                if st.button("💾 Save Edits"):
-                    st.session_state.enhanced_text = edited_text
-                    st.success("Edits saved!")
-    
-    with col2:
-        # Create a container for better alignment
-        audio_container = st.container()
-        
-        with audio_container:
-            st.markdown('<div class="audio-generation-container">', unsafe_allow_html=True)
-            st.header("🎧 Audio Generation")
-            
-            # Audio generation section
-            text_to_convert = st.session_state.enhanced_text if st.session_state.enhanced_text else user_text
-            
-            if text_to_convert:
-                st.subheader("🎵 Generate Audio")
-                
-                # Display selected settings
-                with st.expander("📋 Current Settings", expanded=False):
-                    st.write(f"**Voice:** {voice_descriptions.get(selected_voice, selected_voice)}")
-                    st.write(f"**Tone:** {tone_descriptions.get(selected_tone, selected_tone)}")
-                    st.write(f"**Emotion:** {selected_emotion.title()}")
-                    st.write(f"**Text Length:** {len(text_to_convert)} characters")
-                
-                # Warning for long texts
-                if len(text_to_convert) > 200:
-                    st.warning("⚠️ Text will be truncated to 200 characters for Streamlit Cloud stability")
-                
-                # Simplified chunking (removed for cloud stability)
-                st.info("💡 For best results on Streamlit Cloud, keep text under 200 characters")
-                
-                # Generate audio button
-                if st.button("🎬 Generate Audiobook", type="primary"):
-                    if st.session_state.bark_tts is None:
-                        st.error("Please load models first!")
-                    else:
-                        with st.spinner("Generating audio... Please wait..."):
-                            try:
-                                # Single processing only for cloud stability
-                                final_audio, sample_rate = st.session_state.bark_tts.generate_audio(
-                                    text_to_convert, selected_voice, selected_emotion
-                                )
-                                
-                                if final_audio is not None:
-                                    # Save to temporary file
-                                    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
-                                        scipy.io.wavfile.write(tmp_file.name, sample_rate, final_audio)
-                                        
-                                        # Read the file for download
-                                        with open(tmp_file.name, "rb") as audio_file:
-                                            audio_bytes = audio_file.read()
-                                    
-                                    # Display audio player
-                                    st.success("🎉 Audio generated successfully!")
-                                    st.audio(audio_bytes, format="audio/wav")
-                                    
-                                    # Download button
-                                    st.download_button(
-                                        label="📥 Download Audiobook",
-                                        data=audio_bytes,
-                                        file_name=f"echoverse_{selected_tone}_{selected_emotion}.wav",
-                                        mime="audio/wav"
-                                    )
-                                    
-                                    # Clean up
-                                    try:
-                                        os.unlink(tmp_file.name)
-                                    except:
-                                        pass
-                                    
-                                else:
-                                    st.error("Failed to generate audio. Please try with shorter text or different settings.")
-                            
-                            except Exception as e:
-                                st.error(f"Error generating audio: {e}")
-                                st.info("Try reducing text length or reloading the page")
-            else:
-                st.info("👆 Enter text in the left panel to generate audio")
-            
-            st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Footer
-    st.markdown("---")
-    with st.expander("ℹ️ About", expanded=False):
-        st.markdown("""
-        **EchoVerse** combines AI text enhancement with high-quality speech synthesis:
-        
-        🔧 **Features:**
-        - **Text Enhancement**: Basic pattern-based improvements for different tones
-        - **AI Rewriting**: Advanced text rewriting using language models
-        - **Multiple Voices**: 10 different speaker voices to choose from
-        - **Emotion Control**: Add emotions like happy, sad, excited, etc.
-        - **Chunking**: Process long texts in manageable chunks
-        - **Download**: Save your audiobook as WAV file
-        
-        🎯 **How to use:**
-        1. Load the models using the sidebar button
-        2. Enter your text in the left panel
-        3. Choose enhancement options (basic or AI rewrite)
-        4. Configure voice, tone, and emotion settings
-        5. Generate your audiobook!
-        
-        ⚡ **Tips:**
-        - Use chunking for texts longer than 1000 characters
-        - Different voices work better with different content types
-        - AI rewriting provides more natural flow for audiobooks
-        """)
-    
-    # Add team footer
-    add_team_footer()
-
-if __name__ == "__main__":
-    main()
+            "v2/en_speaker_0": "Speaker 0
